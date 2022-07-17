@@ -7,8 +7,12 @@ def get_data [] {
   | each {|it| $it | get data | select url title}
 }
 
-def select_images [] {
-  where url =~ ".png" or url =~ ".jpg" | where title =~ "[3440x1440]"
+def select_images [path : string] {
+  let selection = ($in | where url =~ ".png" or url =~ ".jpg" | where title =~ "3440x1440")  
+  echo $selection
+  let images = (ls $path | get name | path basename) 
+  echo $images
+  $selection | where title not-in $images
 }
 
 def download [url : string, path : string] {
@@ -21,10 +25,13 @@ def set_wallpaper [path : string] {
 } 
 
 def main [] {
-  let images = (get_data | select_images)
+  let w_path = "/home/grisenti/Pictures/Wallpapers/daily/"
+  let images = (get_data | select_images $w_path)
   echo $images
-  let wallpaper = ($images | first)
-  let path = ("/home/grisenti/Pictures/Wallpapers/daily/" + $wallpaper.title)
-  download $wallpaper.url $path 
-  set_wallpaper $path
+  if ( not ($images | empty?)) {
+    let wallpaper = ($images | first)
+    let path = ($w_path + $wallpaper.title)
+    download $wallpaper.url $path 
+    set_wallpaper $path
+  }
 }
