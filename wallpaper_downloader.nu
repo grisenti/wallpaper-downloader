@@ -1,8 +1,5 @@
 #!/usr/local/bin/nu
 
-let data = (fetch https://reddit.com/r/WidescreenWallpaper/hot/.json | get data | get children)
-let image_path = "/home/grisenti/Pictures/Wallpapers/daily/"
-let present_images = (ls $image_path | get name | path basename)
 let res_w = 3440
 let res_h = 1440
 
@@ -37,7 +34,7 @@ def process-gallery-item [image_data] {
 }
 
 def process-gallery [post] {
-  $post | get media_metadata | transpose key value |each {|it| $it | get value | process-gallery-item $in}
+  $post | get media_metadata | transpose key value | each {|it| $it | get value | process-gallery-item $in}
 }
 
 def process-image-post [post] {
@@ -54,8 +51,11 @@ def process-post [post] {
 }
 
 def main [] {
+  let data = (fetch https://reddit.com/r/WidescreenWallpaper/hot/.json | get data | get children)
+  let image_path = "/home/grisenti/Pictures/Wallpapers/daily/"
+  let present_images = (ls $image_path | get name | path basename)
   let selected = ($data | each { |it| process-post $it} | flatten)
-  echo $selected
+  echo ($selected | flatten)
   let selected = ($selected | flatten | where name not-in $present_images | first)
   let downloaded_path = ($image_path + $selected.name)
   download $selected.url $downloaded_path
