@@ -27,10 +27,10 @@ def is-gallery [post] {
 }
 
 def process-gallery-item [image_data] {
-  let w = ($image_data | get s | get x | first | into int)
-  let h = ($image_data | get s | get y | first | into int)
-  let extension = ($image_data | get m | first | path basename)
-  let id = ($image_data | get id | first)
+  let w = ($image_data | get s | get x | into int)
+  let h = ($image_data | get s | get y | into int)
+  let extension = ($image_data | get m | path basename)
+  let id = ($image_data | get id)
   if ($res_w == $w and $res_h == $h) {
     [[name url]; [$id $"https://i.redd.it/($id).($extension)"]]
   }
