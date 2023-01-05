@@ -3,6 +3,10 @@
 let res_w = 3440
 let res_h = 1440
 
+def to-file-name [name : string] {
+  $name | str replace -a '/' '-'
+}
+
 def download [url : string, path : string] {
   fetch --raw $url
   | save -r $path
@@ -38,7 +42,7 @@ def process-gallery [post] {
 }
 
 def process-image-post [post] {
-  $post | select title url | where title =~ $"($res_w)x($res_h)" | rename name url
+  $post | select title url | where title =~ $"($res_w)x($res_h)" | each {|it| [[name, url]; [(to-file-name $it.title) $it.url]]}
 }
 
 def process-post [post] {
@@ -55,10 +59,19 @@ def main [] {
   let image_path = "/home/grisenti/Pictures/Wallpapers/daily/"
   let present_images = (ls $image_path | get name | path basename)
   let selected = ($data | each { |it| process-post $it} | flatten)
+  echo "canditate images:"
   echo ($selected | flatten)
-  let selected = ($selected | flatten | where name not-in $present_images | first)
-  let downloaded_path = ($image_path + $selected.name)
-  download $selected.url $downloaded_path
-  set-wallpaper $downloaded_path
+  let selected = ($selected | flatten | where name not-in $present_images)
+  echo "new images:"
+  echo $selected
+  if ($selected | is-empty url) {
+    echo "nothing new to download"
+  } else {
+    let selected = ($selected | first)
+    let downloaded_path = ($image_path + ($selected.name | str replace -a '/' '-'))
+    echo $"downloading selected image ($selected.name) to ($downloaded_path)"
+    download $selected.url $downloaded_path
+    set-wallpaper $downloaded_path
+  }
   store-old $image_path
 }
