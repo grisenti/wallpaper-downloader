@@ -86,7 +86,7 @@ echo available
 let already_downloaded = getAlreadyDownloaded()
 let selected = available.filter(image => (image[0] notin already_downloaded))
 let new_wallpaper = if selected.len == 0:
-  sample(already_downloaded.toSeq)
+  download_path & sample(already_downloaded.toSeq)
 else:
   download(selected[0])
 echo "setting wallpaper: ", new_wallpaper
