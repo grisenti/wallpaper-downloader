@@ -80,13 +80,24 @@ proc storeOld() =
       echo "moving ", file, " to archive"
       moveFile(file, download_path & "archive/" & file.splitPath.tail)
 
+proc getArchive(): seq[string] =
+  walkFiles(download_path & "archive/*")
+    .toSeq
+
+proc print(available: seq[(string, string)]) =
+  echo "available selection:"
+  for a in available:
+    echo "name: ", a[0], "\turl: ", a[1]
+
 let data = getData()
 let available = processData(data)
-echo available
+available.print()
 let already_downloaded = getAlreadyDownloaded()
 let selected = available.filter(image => (image[0] notin already_downloaded))
 let new_wallpaper = if selected.len == 0:
-  download_path & sample(already_downloaded.toSeq)
+  echo "nothing new to download, setting old wallpaper"
+  randomize();
+  sample(getArchive())
 else:
   download(selected[0])
 echo "setting wallpaper: ", new_wallpaper
