@@ -7,17 +7,21 @@ import std/strutils
 import std/[tables, sets]
 import std/strformat
 import std/random
+import std/re
 
 const screen_width = 3440
 const screen_height = 1440
 const download_path = "/home/grisenti/Pictures/Wallpapers/daily/"
+const data_sources = ["https://reddit.com/r/WidescreenWallpaper/hot/.json", "https://reddit.com/r/wallpaper/hot/.json"]
+
+let title_regex = re(fmt"{screen_width}\s*(x|\*)\s*{screen_height}")
 
 func normalize(name: string): string =
-  name.replace("/", "-")
+  name.replace("/", "-").escape("", "")
 
-proc getData(): JsonNode =
+proc getData(source: string): JsonNode =
   var client = newHttpClient()
-  let content = parseJson(client.getContent("https://reddit.com/r/WidescreenWallpaper/hot/.json"))
+  let content = parseJson(client.getContent(source))
   content["data"]["children"]
 
 func isGallery(post: JsonNode): bool =
@@ -39,14 +43,19 @@ proc processGallery(gallery_post: JsonNode): seq[(string, string)] =
   for _, item in gallery_post["media_metadata"].getFields.pairs:
     let url = galleryItemUrl(item)
     if url != "":
-      result.add((fmt"{name.normalize} {count}", url))
+      let name = fmt"{name.normalize} {count}"
+      echo fmt"   selected {name} - {url}"
+      result.add((name, url))
     count += 1
 
 proc processImage(image_post: JsonNode): seq[(string, string)] =
   let title = image_post["title"].getStr
-  if title.contains(fmt"{screen_width}x{screen_height}"):
-    return @[(title.normalize, image_post["url"].getStr)]
-  echo title, " was not selected"
+  if title.contains(title_regex):
+    let url = image_post["url"].getStr
+    let name = title.normalize
+    echo fmt"   selected {name} - {url}"
+    return @[(name, url)]
+  echo fmt"   discarded {title}"
   @[]
 
 proc processData(data: JsonNode): seq[(string, string)] =
@@ -84,16 +93,14 @@ proc getArchive(): seq[string] =
   walkFiles(download_path & "archive/*")
     .toSeq
 
-proc print(available: seq[(string, string)]) =
-  echo "available selection:"
-  for a in available:
-    echo "name: ", a[0], "\turl: ", a[1]
-
-let data = getData()
-let available = processData(data)
-available.print()
+var selected = newSeq[(string, string)]()
 let already_downloaded = getAlreadyDownloaded()
-let selected = available.filter(image => (image[0] notin already_downloaded))
+for ds in data_sources:
+  echo "Downloading from ", ds, " ..."
+  let data = getData(ds)
+  let available = processData(data)
+  selected.add(available.filter(image => (image[0] notin already_downloaded)))
+
 let new_wallpaper = if selected.len == 0:
   echo "nothing new to download, setting old wallpaper"
   randomize();
