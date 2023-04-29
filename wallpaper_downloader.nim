@@ -39,6 +39,8 @@ proc galleryItemUrl(gallery_item: JsonNode): string =
 
 proc processGallery(gallery_post: JsonNode): seq[(string, string)] =
   let name = gallery_post["title"].getStr
+  if gallery_post.contains("crosspost_parent_list"): # ignore cross-posts
+    return @[]
   var count = 0
   for _, item in gallery_post["media_metadata"].getFields.pairs:
     let url = galleryItemUrl(item)
