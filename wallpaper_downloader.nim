@@ -106,7 +106,11 @@ for ds in data_sources:
 let new_wallpaper = if selected.len == 0:
   echo "nothing new to download, setting old wallpaper"
   randomize();
-  sample(getArchive())
+  let archive = getArchive()
+  if archive.len == 0:
+    sample(already_downloaded.toSeq)
+  else:
+    sample(archive)
 else:
   download(selected[0])
 echo "setting wallpaper: ", new_wallpaper
