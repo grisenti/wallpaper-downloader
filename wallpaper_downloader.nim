@@ -43,6 +43,8 @@ proc processGallery(gallery_post: JsonNode): seq[(string, string)] =
     return @[]
   var count = 0
   for _, item in gallery_post["media_metadata"].getFields.pairs:
+    if item["status"].getStr != "valid": # ignore invalid
+      continue
     let url = galleryItemUrl(item)
     if url != "":
       let name = fmt"{name.normalize} {count}"
