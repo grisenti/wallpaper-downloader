@@ -17,7 +17,7 @@ const data_sources = ["https://reddit.com/r/WidescreenWallpaper/hot/.json", "htt
 let title_regex = re(fmt"{screen_width}\s*(x|\*)\s*{screen_height}")
 
 func normalize(name: string): string =
-  name.replace("/", "-").escape("", "")
+  name.replace("/", "-").replace("#", "").escape("", "")
 
 proc getData(source: string): JsonNode =
   var client = newHttpClient()
